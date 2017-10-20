@@ -14,6 +14,11 @@ object Client extends js.JSApp {
   def el[T <: dom.raw.HTMLElement] (id: String) = dom.document.getElementById(id).asInstanceOf[T]
 
   def main(): Unit = {
+    val source = new dom.EventSource("events")
+    source.onmessage = { (event: dom.MessageEvent) =>
+      if (event.data.toString.nonEmpty)
+        println(event.data)
+    }
     println(s"Trying to get time from server ...")
     val mainDiv = el[dom.html.Div](Ids.main)
     Wire[shared.Api].getFromServer().call().onComplete {

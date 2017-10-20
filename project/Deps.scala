@@ -7,6 +7,7 @@ object Version {
   val scalajsDom = "0.9.3"
   val scalajsScripts = "1.1.1"
   val scalatags = "0.6.7"
+  val twitter4s = "5.1"
 }
 
 object Deps {
@@ -20,6 +21,7 @@ object Deps {
     "com.github.julien-truffaut" %%%  "monocle-core"  % Version.monocle ::
     "com.github.julien-truffaut" %%%  "monocle-macro" % Version.monocle ::
     "io.suzaku" %%% "boopickle" % Version.boopickle ::
+    "com.danielasfregola" %% "twitter4s" % Version.twitter4s ::
       Nil)
 
   val server = Def.setting(shared.value ++ (

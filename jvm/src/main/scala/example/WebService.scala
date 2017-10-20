@@ -1,10 +1,8 @@
 package example
+import akka.stream.ThrottleMode.Shaping
 import shared.Ids
-import akka.http.scaladsl.model.{ ContentType, ContentTypes, HttpCharset, HttpEntity }
-import akka.http.scaladsl.model.StatusCodes.Success
-import akka.http.scaladsl.model.{ HttpHeader, HttpResponse }
-import akka.http.scaladsl.model.headers.{ `Cache-Control` }
-import akka.http.scaladsl.model.headers.`Content-Type`
+import akka.http.scaladsl.model.{ ContentTypes, HttpEntity }
+import akka.http.scaladsl.model.headers.`Cache-Control`
 import akka.http.scaladsl.model.headers.CacheDirectives._
 
 
@@ -16,19 +14,14 @@ import akka.stream.Materializer
 import akka.actor.ActorSystem
 
 import akka.http.scaladsl.marshalling.sse.EventStreamMarshalling._
-import akka.NotUsed
 import akka.stream.scaladsl.Source
 
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.model.sse.ServerSentEvent
+import akka.http.scaladsl.model.sse.{ ServerSentEvent => SSE }
 import scala.concurrent.duration._
 
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter.ISO_LOCAL_TIME
-
 class WebService() extends Directives {
-  def apply()(implicit s: ActorSystem, m: Materializer, e: ExecutionContext): Route = {
+
+  def apply()(implicit s: ActorSystem, m : Materializer, e: ExecutionContext): Route = {
 
     pathSingleSlash {
       get {
@@ -58,11 +51,10 @@ class WebService() extends Directives {
     path("events") {
       get {
         complete {
-          Source
-            .tick(2.seconds, 2.seconds, NotUsed)
-            .map(_ => LocalTime.now())
-            .map(time => ServerSentEvent(ISO_LOCAL_TIME.format(time)))
-            .keepAlive(1.second, () => ServerSentEvent.heartbeat)
+          Source.fromGraph(new TweetSource)
+            .map(tweet => SSE(tweet.user.map(_.screen_name).getOrElse("") + ": " + tweet.text))
+            .throttle(1, 1.second, 4, Shaping)
+            .keepAlive(1.second, () => SSE.heartbeat)
         }
       }
     }
