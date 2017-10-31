@@ -8,6 +8,7 @@ object Version {
   val scalajsScripts = "1.1.1"
   val scalatags = "0.6.7"
   val twitter4s = "5.1"
+  val diode = "1.1.2"
 }
 
 object Deps {
@@ -30,7 +31,8 @@ object Deps {
       Nil))
 
   val client = Def.setting(shared.value ++ (
+    "io.suzaku" %%% "diode" % Version.diode ::
     "org.scala-js" %%% "scalajs-dom" % Version.scalajsDom ::
-     Nil))
+    Nil))
 
 }

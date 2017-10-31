@@ -9,17 +9,19 @@ import com.danielasfregola.twitter4s.entities.Tweet
 //import scala.concurrent.ExecutionContext.Implicits.global
 
 object TwitterClient {
-  import com.danielasfregola.twitter4s.TwitterStreamingClient
-  private val client = TwitterStreamingClient()
-
   private var subscribers = List[Tweet => Unit]()
 
   def subscribe(f: Tweet => Unit) = subscribers +:= f
+  try {
+    import com.danielasfregola.twitter4s.TwitterStreamingClient
+    val client = TwitterStreamingClient()
 
-  client.filterStatuses(tracks = Seq("#bitcoin", "#neo900", "@ScalaIO_FR", "#scala")){
+
+    client.filterStatuses(tracks = Seq("#bitcoin", "#neo900", "@ScalaIO_FR", "#scala")){
     case t: Tweet =>
       subscribers.foreach(_(t))
-  }
+    }
+  } catch {case e: Exception => }
 }
 
 class TweetSource extends GraphStage[SourceShape[Tweet]] {
@@ -40,6 +42,7 @@ class TweetSource extends GraphStage[SourceShape[Tweet]] {
         }
 
         val callback = getAsyncCallback[Tweet](bufferMessageAndEmulatePull)
+
         TwitterClient.subscribe(callback.invoke)
 
       }

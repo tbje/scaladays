@@ -34,6 +34,7 @@ class WebService() extends Directives {
                 |  </head>
                 |  <body>
                 |   <div id="${Ids.main}">Trying to get time from server ...</div>
+                |   <img src="static/airplane.svg"/>
                 |   <script src="/assets/client-fastopt.js" type="text/javascript"></script>
                 |  </body>
                 |</html>""".stripMargin)
@@ -48,6 +49,11 @@ class WebService() extends Directives {
     path("api" / Segments) { segments =>
       post(AutowireServer.dispatch(segments))
     } ~
+    path("static" / Remaining) { file =>
+      get(
+        getFromFile(s"/home/tbje/full-stack2/full-stack/jvm/src/main/resources/$file")
+      )
+     } ~
     path("events") {
       get {
         complete {
