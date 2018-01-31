@@ -67,9 +67,42 @@ object Client {
     def randomPoint() =
       Point(nextInt(canCtx.width.toInt).toDouble, nextInt(canCtx.height.toInt).toDouble)
 
-    Triangle(300, 200).draw(randomPoint(), Color.rand)
-    Circle(100).draw(randomPoint(), Color.rand)
-    Rect(100, 50).draw(randomPoint(), Color.rand)
+    val CircleReg = """circle (\d*) (.*)""".r
+    val RectReg = """rect (\d*) (\d*) (.*)""".r
+    val TriReg = """tri (\d*) (\d*) (.*)""".r
+
+    def parseInput(s: String) = s match {
+      case CircleReg(rad, color) =>
+        Circle(rad.toDouble).draw(randomPoint, Color(color))
+      case  RectReg(w, h, c) =>
+        Rect(w.toInt, h.toInt).draw(randomPoint(), Color(c))
+      case  TriReg(w, h, c) =>
+        Triangle(w.toInt, h.toInt).draw(randomPoint(), Color(c))
+      case x =>
+        println(s"Not able to parse $x")
+    }
+
+    val w = 650
+    val inputF = input(
+      backgroundColor:="LightGray",
+      position:="absolute",
+      left:= (canCtx.width-w) / 2,
+      padding:="6px",
+      width:= w,
+      top:= canCtx.height-200,
+      height:= 80,
+      opacity:=0.8,
+      outline:="none",
+      border:="0px solid",
+      fontSize:="3em").render
+
+    inputF.onkeyup = { event =>
+      if(event.keyCode == KeyCode.Enter) {
+        parseInput(inputF.value)
+      }
+    }
+
+    devDiv.appendChild(inputF)
 
   }
 }
