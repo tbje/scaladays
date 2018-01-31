@@ -1,5 +1,7 @@
 package shared
 
+case class Person(name: String, age: Int)
+
 trait Api {
-  def getFromServer(): MyType
+  def getUser(): Person
 }
