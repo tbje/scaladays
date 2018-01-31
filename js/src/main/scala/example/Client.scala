@@ -9,11 +9,21 @@ object Client {
 
   def main(args: Array[String]): Unit = {
 
+    val source = new dom.EventSource("/events")
+    val list = ul().render
+
+    source.onmessage = { (e: MessageEvent) =>
+      if (e.data != "") {
+        list.appendChild(li(e.data.toString).render)
+      }
+    }
+
     val devDiv = Presentation.init(dom.window.location.pathname)
 
     val heading = h1("Good afternoon ScalaDays!").render
 
     devDiv.appendChild(heading)
+    devDiv.appendChild(list)
 
     val t = dom.window
     implicit val canCtx = CanvasCtx(t.innerWidth, t.innerHeight)
