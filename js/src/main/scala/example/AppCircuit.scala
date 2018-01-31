@@ -21,7 +21,7 @@ import org.scalajs.dom
 
 object AppCircuit extends Circuit[PresentationState] {
 
-  def initialModel = PresentationState(1, 0, dom.window.performance.now(), false, false)
+  def initialModel = PresentationState(-1, 0, dom.window.performance.now(), false, false)
 
   def hasMore(s: Slide, el: Int) = s match {
     case ElementsSlide(draws) if el + 1 < draws.size => true
@@ -30,38 +30,29 @@ object AppCircuit extends Circuit[PresentationState] {
 
   val slideHandler = new ActionHandler(zoomRW[PresentationState](x=>x)((x,y)=>y)) {
     override def handle = {
+      case UpdateAnimation if !value.animation => noChange
+      case UpdateAnimation => effectOnly(Effect.action(UpdateAnimation))
+      case StartAnimation => updated(value.copy(animation = true), Effect.action(UpdateAnimation))
+      case StopAnimation => updated(value.copy(animation = false))
+      case x: Action if value.animation & ! x.isInstanceOf[diode.ActionBatch] & !x.isInstanceOf[RAFTimeStamp] =>
+        updated(value.copy(animation = false), Effect.action(x))
       case Next if hasMore(Presentation.slides(value.slide), value.subSlide) =>
         updated(value.copy(subSlide = value.subSlide + 1, animation = false))
-      case Next if value.animation =>
-        println("next anim")
-        updated(value.copy(animation = false), Effect.action(Next))
       case Next if Presentation.slides.isDefinedAt(value.slide + 1) =>
-        println("next slide")
         updated(value.copy(slide = value.slide + 1, subSlide = 0, animation = false))
       case Next =>
         noChange
       case First =>
         updated(value.copy(slide = 0, animation = false, subSlide = 0))
-      case SlideDev(x) if value.animation =>
-        println("here")
-        updated(value.copy(slide = x, animation = false, devMode = true), Effect.action(SlideDev(x)))
       case SlideDev(x) =>
-        println("here2")
-        updated(value.copy(slide = x, animation = false, devMode = true))
+        println(s"dev $x")
+        updated(value.copy(slide = x, animation = false, subSlide = 0, devMode = true))
       case SlidePres(x) =>
-        println("here3")
-        updated(value.copy(slide = x, animation = false, devMode = false))
-      case Prev if value.animation =>
-        updated(value.copy(animation = false), Effect.action(Prev))
+        println(s"pres $x")
+        updated(value.copy(slide = x, animation = false, subSlide = 0, devMode = false))
       case Prev if value.slide > 0 => updated(value.copy(slide = value.slide - 1, subSlide = 0))
       case Prev => noChange
       case ToggleMode => updated(value.copy(devMode = !value.devMode))
-      case UpdateAnimation if !value.animation =>
-        noChange
-      case StartAnimation => updated(value.copy(animation = true), Effect.action(UpdateAnimation))
-      case StopAnimation => updated(value.copy(animation = false))
-      case UpdateAnimation =>
-        effectOnly(Effect.action(UpdateAnimation))
     }
   }
 

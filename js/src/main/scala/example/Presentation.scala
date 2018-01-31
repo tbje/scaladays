@@ -11,31 +11,11 @@ case class AnimationSlide(animation: (Double, CanvasCtx) => Double => Unit) exte
 
 object Presentation {
 
-  def el[T <: dom.raw.HTMLElement] (id: String) = dom.document.getElementById(id).asInstanceOf[T]
-  val mainDiv = el[dom.html.Div](Ids.main)
-  val presDiv = div(id:="Presentation").render
-  val devDiv = div(id:="Development", visibility:="hidden").render
-  mainDiv.appendChild(presDiv)
-  mainDiv.appendChild(devDiv)
-
   def url(devMode: Boolean, slide: Int) =
     s"/${ if(devMode) "dev" else "pres"}/$slide"
 
   def pushUrl(devMode: Boolean, slide: Int) =
     dom.window.history.pushState(null, null, url(devMode, slide))
-
-  def initCb() =
-    AppCircuit.subscribe(AppCircuit.zoom(_.devMode)){ dev =>
-      if (dev.value) {
-        devDiv.style.visibility = "visible"
-        presDiv.style.visibility = "hidden"
-        pushUrl(dev.value, AppCircuit.zoom(_.slide).value)
-      } else {
-        devDiv.style.visibility = "hidden"
-        presDiv.style.visibility = "visible"
-        pushUrl(dev.value, AppCircuit.zoom(_.slide).value)
-      }
-    }
 
   import Images._
 
@@ -115,6 +95,13 @@ object Presentation {
 
 
   def init(path: String) = {
+    def el[T <: dom.raw.HTMLElement] (id: String) = dom.document.getElementById(id).asInstanceOf[T]
+    val mainDiv = el[dom.html.Div](Ids.main)
+    val presDiv = div(id:="Presentation").render
+    val devDiv = div(id:="Development", visibility:="hidden").render
+    mainDiv.appendChild(presDiv)
+    mainDiv.appendChild(devDiv)
+
     val pathReg = """/(.*)/(\d*).*""".r //"""/(.*)/(\d*).*""".r
     val w = dom.window
     val canCtx = CanvasCtx(w.innerWidth, w.innerHeight)
@@ -135,7 +122,18 @@ object Presentation {
       if (t.value) currentAnimation(x.value)
     }
 
-    initCb()
+    AppCircuit.subscribe(AppCircuit.zoom(_.devMode)){ dev =>
+      if (dev.value) {
+        devDiv.style.visibility = "visible"
+        presDiv.style.visibility = "hidden"
+        pushUrl(dev.value, AppCircuit.zoom(_.slide).value)
+      } else {
+        devDiv.style.visibility = "hidden"
+        presDiv.style.visibility = "visible"
+        pushUrl(dev.value, AppCircuit.zoom(_.slide).value)
+      }
+    }
+
     path match {
       case pathReg("dev", slide) =>
         AppCircuit.dispatch(SlideDev(slide.toInt))
@@ -144,6 +142,8 @@ object Presentation {
       case _ =>
         AppCircuit.dispatch(First)
     }
+
+    devDiv
   }
 
   def draw(slide: Int, time: Double)(implicit canCtx: CanvasCtx) = {
@@ -156,6 +156,7 @@ object Presentation {
         startAnimation()
       case SimpleSlide(draw) =>
         println(s"Drawing simple: $slide")
+        draw(canCtx)
         draw(canCtx)
       case ElementsSlide(draws) =>
         println(s"Drawing elemSlide: $slide")

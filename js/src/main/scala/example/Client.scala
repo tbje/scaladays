@@ -10,10 +10,10 @@ import scalatags.JsDom.all._
 object Client {
 
   def main(args: Array[String]): Unit = {
-    Presentation.init(dom.window.location.pathname)
-    val devDiv = Presentation.devDiv
 
-    val heading = h1("Gueten Abig Zűrich", color:="pink").render
+    val devDiv = Presentation.init(dom.window.location.pathname)
+
+    val heading = h1("Gueten Abig Zűrich").render
 
     devDiv.appendChild(heading)
 
@@ -75,7 +75,6 @@ object Client {
 
     import scala.util.Random.nextInt
 
-
     def randomPoint() =
       Point(nextInt(canCtx.width.toInt).toDouble, nextInt(canCtx.height.toInt).toDouble)
 
@@ -96,13 +95,13 @@ object Client {
 
     val w = 650
     val inputF = input(
-      backgroundColor:="pink",
+      backgroundColor:="light-gray",
       position:="absolute",
       left:= (canCtx.width-w) / 2,
       width:= w,
       top:= canCtx.height-200,
-      height:=200,
-      opacity:=0.6,
+      height:= 80,
+      opacity:=0.8,
       outline:="none",
       border:="0px solid",
       fontSize:="3em").render

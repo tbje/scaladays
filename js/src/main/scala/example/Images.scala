@@ -115,7 +115,7 @@ object Images {
 
   def loadImage(name: String): Future[HTMLImageElement] = {
     val image = dom.document.createElement("img").asInstanceOf[HTMLImageElement]
-    image.src = s"static/$name"
+    image.src = s"/static/$name"
     val promise: Promise[HTMLImageElement] = Promise[HTMLImageElement]()
     image.onload = (e: dom.Event) => promise.success(image)
     promise.future
