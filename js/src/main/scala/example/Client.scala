@@ -16,19 +16,19 @@ object Client {
 
     val devDiv = Presentation.init(dom.window.location.pathname)
 
-    println(s"Trying to get time from server ...")
+    val d = div(margin:="10px").render
+    devDiv.appendChild(d).render
 
     Wire[shared.Api].getUser().call().onComplete {
       case Success(Person(name, age)) =>
         val msg = if (age < 18)
-          s"Sorry $name, only adults allowed here"
+          h1(s"Sorry $name, only adults allowed here", color:="red")
         else
-          s"Welcome $name, please enjoy!"
-        devDiv.textContent = msg
+          h1(s"Welcome $name, please enjoy!", color:="green")
+        d.appendChild(msg.render)
       case Failure(f) =>
         println("Failed call" + f)
-        devDiv.textContent = "Not able to contact server"
+        d.appendChild(h1("Not able to contact server", color:="red").render)
     }
   }
-
 }
