@@ -15,7 +15,7 @@ object TwitterClient {
     import com.danielasfregola.twitter4s.TwitterStreamingClient
     val client = TwitterStreamingClient()
 
-    client.filterStatuses(tracks = Seq("#bitcoin", "#neo900", "@ScalaIO_FR", "#scala")){
+    client.filterStatuses(tracks = Seq("#scalazurich")){
     case t: Tweet =>
       subscribers.foreach(_(t))
     }
