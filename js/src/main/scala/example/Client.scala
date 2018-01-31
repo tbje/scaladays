@@ -7,8 +7,8 @@ import scalatags.JsDom.all._
 import scala.util._
 import autowire._
 import boopickle.Default._
-import shared.MyType._
 import concurrent.ExecutionContext.Implicits.global
+import shared._
 
 object Client {
 
@@ -18,10 +18,12 @@ object Client {
 
     println(s"Trying to get time from server ...")
 
-    Wire[shared.Api].getFromServer().call().onComplete {
-      case Success(m) =>
-        val msg = m.msg + " " + m.time
-        println(msg)
+    Wire[shared.Api].getUser().call().onComplete {
+      case Success(Person(name, age)) =>
+        val msg = if (age < 18)
+          s"Sorry $name, only adults allowed here"
+        else
+          s"Welcome $name, please enjoy!"
         devDiv.textContent = msg
       case Failure(f) =>
         println("Failed call" + f)
