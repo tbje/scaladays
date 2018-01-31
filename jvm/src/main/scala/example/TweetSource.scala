@@ -1,6 +1,5 @@
 package example
 
-import akka.stream.stage.AsyncCallback
 import akka.stream.{ Attributes, Outlet, SourceShape }
 import akka.stream.stage.{ GraphStage, GraphStageLogic }
 import akka.stream.stage.OutHandler
@@ -15,7 +14,6 @@ object TwitterClient {
   try {
     import com.danielasfregola.twitter4s.TwitterStreamingClient
     val client = TwitterStreamingClient()
-
 
     client.filterStatuses(tracks = Seq("#bitcoin", "#neo900", "@ScalaIO_FR", "#scala")){
     case t: Tweet =>

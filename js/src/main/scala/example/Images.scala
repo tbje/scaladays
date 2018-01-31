@@ -1,11 +1,26 @@
 package example
 
-import org.scalajs.dom.raw.{ CanvasRenderingContext2D => Ctx, HTMLImageElement }
+import org.scalajs.dom.raw.{ CanvasRenderingContext2D => Ctx, HTMLImageElement, HTMLElement }
 import SvgUtil._
 import scala.concurrent.{ Future, Promise }
 
+case class CanvasCtx(canvas: HTMLElement, ctx: Ctx, width: Double, height: Double)
+
+import scalatags.JsDom.all._
+
+object CanvasCtx{
+  def apply(canvasWidth: Double, canvasHeight: Double): CanvasCtx = {
+    val canv = canvas(width:=canvasWidth, height:=canvasHeight, position:="absolute", top:=0, left:=0, zIndex:="-100").render
+    canv.width = canvasWidth.toInt
+    canv.height = canvasHeight.toInt
+    val ctx: Ctx = canv.getContext("2d").asInstanceOf[Ctx]
+    CanvasCtx(canv, ctx, canvasWidth, canvasHeight)
+  }
+}
+
 object Images {
-  def drawIsland()(implicit ctx: Ctx) = {
+
+  def drawPalm()(implicit ctx: Ctx) = {
     withPath(Color(Some("green"), Some(1 -> "black"))){ctx =>
       ctx.moveTo(140.76834,567.84201)
       ctx.lineTo(220.80169,561.72626)
@@ -22,6 +37,9 @@ object Images {
       ctx.bezierCurveTo(171.93224, 373.81087, 178.04034, 395.10373, 228.14843, 354.39658)
       ctx.bezierCurveTo(118.27846, 569.45788, 149.83933, 544.37875, 140.76834, 567.84201)
     }
+  }
+
+  def drawIsland()(implicit ctx: Ctx) = {
     withPath(Color("yellow")){ctx =>
       ctx.moveTo(297.15179,591.06696)
       ctx.bezierCurveTo(177.67220, 592.60884, 75.531250, 587.59375, 75.531250, 587.59375)
@@ -31,6 +49,39 @@ object Images {
       ctx.bezierCurveTo(425.69019, 595.40284, 359.73634, 590.25931, 297.15179, 591.06696)
     }
   }
+  case class Point(x: Double, y: Double)
+
+  case class MyCircle(pos: Point, color: Color, letter: String, rad: Double, yOffset: Double, font: Double, vari: Double)
+
+  def fullStack(circles: Seq[MyCircle], start: Double)(t: Double)(implicit canCtx: CanvasCtx) = {
+    val CanvasCtx(_, ctx, canvasWidth, canvasHeight) = canCtx
+    ctx.save()
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight)
+
+    def slowDown(t: Double): Double = (10 - math.min(math.log(1 + t - start), 9.8)) // , 5), 0.2)
+
+    def yPos(base: Double, offset: Double, vari: Double, t: Double): Double =
+      base + offset - vari * math.sin(t/100 + offset) * slowDown(t)
+
+    val all = circles.map(c => c.copy(pos = c.pos.copy(y = yPos(c.pos.y, c.yOffset, c.vari, t))))
+
+    all.foreach{ case MyCircle(Point(x, y), color, letter, rad, yOffset, fontSize, _) =>
+      ctx.fillStyle = color.fill.getOrElse("pink").toString
+      ctx.beginPath()
+      ctx.arc(x, y, rad, 0, 2 * Math.PI)
+      ctx.closePath()
+      ctx.fill()
+      ctx.strokeStyle = "black"
+      ctx.textAlign = "center"
+      ctx.textBaseline = "middle"
+      ctx.fillStyle = "black"
+      ctx.font = s"${fontSize}px Comic Sans MS, cursive, TSCu_Comic, sans-serif"
+      ctx.strokeText(letter, x, y, 40)
+      ctx.fillText(letter, x, y, 40)
+    }
+    ctx.restore()
+  }
+
 
   def drawMan()(implicit ctx: Ctx) = {
     withPath(Color("black")){ ctx =>
@@ -93,6 +144,13 @@ object Images {
     }
   }
 
+  def brain()(implicit ctx: CanvasCtx) = {
+    Future.sequence(List(loadImage("brain.jpg"))).onSuccess{
+      case List(brain)  =>
+        writeText("Context switching", "70px Comic Sans MS", 90, 100, 600)(ctx.ctx)
+        drawImage2(brain, 700, 60, 1)(ctx.ctx)
+    }
+  }
   def today()(implicit ctx: Ctx) = {
     Future.sequence(List(loadImage("today.png"), loadImage("java.png"), loadImage("scala.png"), loadImage("js-logo.jpg"), loadImage("llvm.png"))).onSuccess{
       case List(today, java, scala, js, llvm)  =>
@@ -174,49 +232,60 @@ object Images {
    }
   }
 
-  def drawImage(canvasWidth: Double, canvasHeight: Double)(implicit ctx: Ctx) = {
-    val seaHight: Double = 500
-    drawSea(canvasWidth, canvasHeight, seaHight)
-    drawBlueSky(canvasWidth, canvasHeight, seaHight)
-
-    withTranslation(-70, 0){implicit ctx => drawIsland() }
-
-    withTranslation(540, 0){implicit ctx => drawIsland() }
-
-    withTranslation(130, 480){implicit ctx =>
-      withScale(0.2, 0.2){implicit ctx =>
-        drawMan()
+  def drawImage(): Seq[CanvasCtx => Unit] = Seq(
+    implicit canCtx => {
+      implicit val CanvasCtx(_, ctx, canvasWidth, canvasHeight) = canCtx
+      val seaHight: Double = 500
+      drawSea(canvasWidth, canvasHeight, seaHight)
+      drawBlueSky(canvasWidth, canvasHeight, seaHight)
+    },
+    implicit canCtx => {
+      implicit val CanvasCtx(_, ctx, canvasWidth, canvasHeight) = canCtx
+      withTranslation(-70, 0){implicit ctx => drawIsland() }
+      withTranslation(540, 0){implicit ctx => drawIsland() }
+    },
+    implicit canCtx => {
+      implicit val CanvasCtx(_, ctx, canvasWidth, canvasHeight) = canCtx
+      withTranslation(130, 480){implicit ctx =>
+        withScale(0.2, 0.2){implicit ctx =>
+          drawMan()
+        }
       }
-    }
-
-    withTranslation(700, 480){implicit ctx =>
-      withScale(0.2, 0.2){implicit ctx =>
-        drawMan()
+      withTranslation(750, 480){implicit ctx =>
+        withScale(0.2, 0.2){implicit ctx =>
+          drawMan()
+        }
       }
-    }
+    },
+    implicit canCtx => {
+      implicit val CanvasCtx(_, ctx, canvasWidth, canvasHeight) = canCtx
+      drawSun()
+      withTranslation(-70, 0){implicit ctx => drawPalm() }
+      withTranslation(540, 0){implicit ctx => drawPalm() }
+    },
+    implicit canCtx => {
+      implicit val CanvasCtx(_, ctx, canvasWidth, canvasHeight) = canCtx
 
-    drawSun()
-
-    withTranslation(50, 200){implicit ctx =>
-      drawBouble()
-    }
-
-    withTranslation(860, 200){implicit ctx =>
-      withScale(-1, 1){implicit ctx =>
+      withTranslation(50, 200){implicit ctx =>
         drawBouble()
       }
-    }
 
-    withScale(2, 2){ ctx =>
-      ctx.strokeText("Bonjour", 105, 209, 300)
-    }
+      withTranslation(860, 200){implicit ctx =>
+        withScale(-1, 1){implicit ctx =>
+          drawBouble()
+        }
+      }
+
+      withScale(2, 2){ ctx =>
+        ctx.strokeText("Bonjour", 105, 209, 300)
+      }
 
     withTranslation(610, 420){implicit ctx =>
       withScale(1.6, 1.6){implicit ctx =>
         ctx.strokeText("Hei på deg!", 0, 0, 300)
       }
     }
-  }
+  })
 
 
 }

@@ -1,5 +1,7 @@
 package shared
 
+case class MyTweet(user: String, tweet: String)
+
 trait Api {
-  def getFromServer(): MyType
+  def getTweet(): String
 }

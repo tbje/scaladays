@@ -1,17 +1,29 @@
 package example
 
-import org.scalajs.dom.raw.{ CanvasRenderingContext2D => Ctx }
 import scala.scalajs.js
 
 object Txt {
 
-  def txt(start: Double)(t: Double)(implicit ctx: Ctx) = {
+  def txt2(what: String, y: Double, c: Color)(implicit canCtx: CanvasCtx) = {
+    val font = "50px Comic Sans MS, cursive, TSCu_Comic, sans-serif"
+    canCtx.ctx.save()
+    canCtx.ctx.font = font
+    c.applyColor(canCtx.ctx)
+    val x = canCtx.width / 4
+    canCtx.ctx.strokeText(what, x, y, 800)
+    canCtx.ctx.fillText(what, x, y, 800)
+    canCtx.ctx.restore()
+  }
+
+  def txt(start: Double, canCtx: CanvasCtx)(t: Double) = {
+    implicit val ctx = canCtx.ctx
     val txt = "sbt new tbje/full-stack.g8"
     val dashLen = 220.0
 
     val dashOffset = dashLen - ((t - start)  % 220.0)
     val font = "50px Comic Sans MS, cursive, TSCu_Comic, sans-serif"
     ctx.save()
+    SvgUtil.withTranslation(200, 200){implicit ctx =>
     ctx.font = font
     ctx.strokeStyle = "red"
     ctx.fillStyle = "red"
@@ -36,6 +48,7 @@ object Txt {
         ctx.setLineDash(js.Array[Double](dashLen - dashOffset, dashOffset - speed))
         ctx.strokeText(txt(letterIndex).toString, x, 90)
       }
+    }
       ctx.restore()
   }
 

@@ -21,44 +21,48 @@ import scala.concurrent.duration._
 
 class WebService() extends Directives {
 
+  val mainHtml = s"""|<!DOCTYPE html>
+                     |<html>
+                     |  <head>
+                     |    <title>Full Stack Scala</title>
+                     |  </head>
+                     |  <body>
+                     |   <div id="${Ids.main}"></div>
+                     |   <script src="/js/client-fastopt.js" type="text/javascript"></script>
+                     |  </body>
+                     |</html>""".stripMargin
+
+  val mainReply = HttpEntity(ContentTypes.`text/html(UTF-8)`, string = mainHtml)
+
   def apply()(implicit s: ActorSystem, m : Materializer, e: ExecutionContext): Route = {
 
-    pathSingleSlash {
-      get {
-        complete {
-          HttpEntity(ContentTypes.`text/html(UTF-8)`, string =
-            s"""|<!DOCTYPE html>
-                |<html>
-                |  <head>
-                |    <title>Hello Full Stack Scala</title>
-                |  </head>
-                |  <body>
-                |   <div id="${Ids.main}">Trying to get time from server ...</div>
-                |   <img src="static/airplane.svg"/>
-                |   <script src="/assets/client-fastopt.js" type="text/javascript"></script>
-                |  </body>
-                |</html>""".stripMargin)
-        }
-      }
+    (pathSingleSlash | (pathPrefix("dev" | "pres"))) {
+      get(complete(mainReply))
     } ~
     ((pathPrefix("assets" / Remaining) & respondWithHeader(`Cache-Control`(`no-cache`)))) { file =>
       // optionally compresses the response with Gzip or Deflate
       // if the client accepts compressed responses
-      getFromResource("public/" + file)
+      getFromResource("public" + file)
+    } ~
+    ((pathPrefix("js" / Remaining) & respondWithHeader(`Cache-Control`(`no-cache`)))) { file =>
+      // optionally compresses the response with Gzip or Deflate
+      // if the client accepts compressed responses
+      getFromFile("/home/tbje/scaladays/js/target/scala-2.12/" + file)
     } ~
     path("api" / Segments) { segments =>
       post(AutowireServer.dispatch(segments))
     } ~
     path("static" / Remaining) { file =>
       get(
-        getFromFile(s"/home/tbje/full-stack2/full-stack/jvm/src/main/resources/$file")
+        getFromFile(s"/home/tbje/scaladays/jvm/src/main/resources/$file")
       )
      } ~
     path("events") {
       get {
         complete {
+          import boopickle.Default._
           Source.fromGraph(new TweetSource)
-            .map(tweet => SSE(tweet.user.map(_.screen_name).getOrElse("") + ": " + tweet.text))
+            .map(tweet => SSE(tweet.user.map(_.screen_name).getOrElse("") + " : " + tweet.text))
             .throttle(1, 1.second, 4, Shaping)
             .keepAlive(1.second, () => SSE.heartbeat)
         }

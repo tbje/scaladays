@@ -13,7 +13,7 @@ object Color {
       new Color(Some(fill), None)
   }
   def rand() = {
-    val colors = Seq("red", "green", "blue", "yellow", "orange", "pink", "cyan", "magenta")
+    val colors = Seq("#ea4335", "#7cbf00", "#00a1f1", "yellow", "orange", /*"pink", */"cyan", "magenta")
     new Color(colors.lift(util.Random.nextInt(colors.size)), None)
   }
 }
