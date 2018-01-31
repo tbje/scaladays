@@ -3,24 +3,25 @@ import org.scalajs.dom.raw.{ CanvasRenderingContext2D => Ctx }
 
 object SvgUtil {
 
-  def withTranslation(x: Double, y: Double)(block: Ctx => Unit)(implicit ctx: Ctx) = {
+  def withTranslation(x: Double, y: Double)(block: CanvasCtx => Unit)(implicit c: CanvasCtx) = {
+    val ctx = c.ctx
     ctx.save()
     ctx.translate(x, y)
-    block(ctx)
+    block(c)
     ctx.restore()
   }
 
-  def withScale(x: Double, y: Double)(block: Ctx => Unit)(implicit ctx: Ctx) = {
+  def withScale(x: Double, y: Double)(block: CanvasCtx => Unit)(implicit c: CanvasCtx) = {
+    val ctx = c.ctx
     ctx.save()
     ctx.scale(x, y)
-    block(ctx)
+    block(c)
     ctx.restore()
   }
 
-  def withPath(color: Color)(block: Ctx => Unit)(implicit ctx: Ctx) = {
-    val oldFill = ctx.fillStyle
-    val oldStrokeStyle = ctx.strokeStyle
-    val oldStroke = ctx.lineWidth
+  def withPath(color: Color)(block: Ctx => Unit)(implicit c: CanvasCtx) = {
+    val ctx = c.ctx
+    ctx.save()
     color.fill.foreach(fill => ctx.fillStyle = fill)
     color.stroke.foreach{ stroke =>
       ctx.lineWidth = stroke._1.toDouble
@@ -35,8 +36,6 @@ object SvgUtil {
     color.stroke.foreach{ stroke =>
       ctx.stroke()
     }
-    ctx.strokeStyle = oldStrokeStyle
-    ctx.lineWidth = oldStroke
-    ctx.fillStyle = oldFill
+    ctx.restore()
   }
 }

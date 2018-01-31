@@ -1,6 +1,6 @@
 package example
-import diode._
 
+import diode._
 
 case class AppState(slide: Int = 0, interaction: Int = 0)
 
@@ -25,6 +25,10 @@ object AppCircuit extends Circuit[PresentationState] {
 
   def hasMore(s: Slide, el: Int) = s match {
     case ElementsSlide(draws) if el + 1 < draws.size => true
+    case AnimationSlide(_,draws) =>
+      val r = if (el < draws.size)  true else false
+      println(s"$draws $el $r")
+      r
     case _ => false
   }
 
@@ -32,7 +36,10 @@ object AppCircuit extends Circuit[PresentationState] {
     override def handle = {
       case UpdateAnimation if !value.animation => noChange
       case UpdateAnimation => effectOnly(Effect.action(UpdateAnimation))
-      case StartAnimation => updated(value.copy(animation = true), Effect.action(UpdateAnimation))
+      case StartAnimation =>
+        val ts = dom.window.performance.now()
+        println(s"Start animation $ts")
+        updated(value.copy(animation = true, time = ts), Effect.action(UpdateAnimation))
       case StopAnimation => updated(value.copy(animation = false))
       case x: Action if value.animation & ! x.isInstanceOf[diode.ActionBatch] & !x.isInstanceOf[RAFTimeStamp] =>
         updated(value.copy(animation = false), Effect.action(x))

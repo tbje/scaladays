@@ -20,8 +20,8 @@ object CanvasCtx{
 
 object Images {
 
-  def drawPalm()(implicit ctx: Ctx) = {
-    withPath(Color(Some("green"), Some(1 -> "black"))){ctx =>
+  def drawPalm()(implicit ctx: CanvasCtx) = {
+    withPath(Color(Some("green"), Some(1 -> "black"))){ ctx =>
       ctx.moveTo(140.76834,567.84201)
       ctx.lineTo(220.80169,561.72626)
       ctx.bezierCurveTo(160.85445, 532.93072, 232.90722, 380.13518, 240.95998, 358.33964)
@@ -39,7 +39,7 @@ object Images {
     }
   }
 
-  def drawIsland()(implicit ctx: Ctx) = {
+  def drawIsland()(implicit ctx: CanvasCtx) = {
     withPath(Color("yellow")){ctx =>
       ctx.moveTo(297.15179,591.06696)
       ctx.bezierCurveTo(177.67220, 592.60884, 75.531250, 587.59375, 75.531250, 587.59375)
@@ -53,7 +53,7 @@ object Images {
 
   case class MyCircle(pos: Point, color: Color, letter: String, rad: Double, yOffset: Double, font: Double, vari: Double)
 
-  def fullStack(circles: Seq[MyCircle], start: Double)(t: Double)(implicit canCtx: CanvasCtx) = {
+  def fullStack(circles: Seq[MyCircle], start: Double, str: Option[String] = None)(t: Double)(implicit canCtx: CanvasCtx) = {
     val CanvasCtx(_, ctx, canvasWidth, canvasHeight) = canCtx
     ctx.save()
     ctx.clearRect(0, 0, canvasWidth, canvasHeight)
@@ -79,12 +79,13 @@ object Images {
       ctx.strokeText(letter, x, y, 40)
       ctx.fillText(letter, x, y, 40)
     }
+    str.foreach(t => Txt.txt3(t, 1000, 900, Presentation.sdBlue))
     ctx.restore()
   }
 
 
-  def drawMan()(implicit ctx: Ctx) = {
-    withPath(Color("black")){ ctx =>
+  def drawMan()(implicit ctx: CanvasCtx) = {
+    withPath(Color("black")){ implicit ctx =>
       ctx.moveTo(212.828, 128.61)
       ctx.lineTo(127.188, 217.642)
       ctx.lineTo(144.994, 235.448)
@@ -103,7 +104,7 @@ object Images {
       ctx.lineTo(266.248, 128.61)
       ctx.lineTo(212.828, 128.61)
     }
-    withPath(Color("black")){ctx =>
+    withPath(Color("black")){ implicit ctx =>
       ctx.moveTo(239.114, 12.4448)
       ctx.bezierCurveTo(159.409, 14.1406, 160.257, 118.435, 236.57, 119.283)
       ctx.bezierCurveTo(318.819, 119.283, 321.362, 13.2928, 239.114, 12.4448)
@@ -121,54 +122,69 @@ object Images {
     promise.future
   }
 
-  def drawImage2(x: HTMLImageElement, posX: Double, posY: Double, scale: Double)(implicit ctx: Ctx) =
-    ctx.drawImage(x, 0, 0, x.width, x.height, posX, posY, x.width * scale, x.height * scale)
+  def drawImage2(x: HTMLImageElement, posX: Double, posY: Double, scale: Double)(implicit ctx: CanvasCtx) =
+    ctx.ctx.drawImage(x, 0, 0, x.width, x.height, posX, posY, x.width * scale, x.height * scale)
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  def writeText(msg: String, font: String, xPos: Double, yPos: Double, maxSize: Double)(implicit ctx: Ctx) = {
-    val f = ctx.font
+  def writeText(msg: String, font: String, xPos: Double, yPos: Double, maxSize: Double, color: Option[Color] = None)(implicit c: CanvasCtx) = {
+    val ctx = c.ctx
+    ctx.save()
     ctx.font = font
+    color.map(c => c.applyColor(ctx))
     ctx.strokeText(msg, xPos, yPos, maxSize)
     ctx.fillText(msg, xPos, yPos, maxSize)
-    ctx.font = f
+    ctx.restore()
   }
 
-  def backInTheDays()(implicit ctx: Ctx) = {
+  def writeTitle(str: String, color: Option[Color] = None)(implicit ctx: CanvasCtx) =
+    writeText(str, "70px Comic Sans MS", 90, 100, 600, color)
+
+  import Presentation.sdBlue
+  def backInTheDays()(implicit ctx: CanvasCtx) = {
     Future.sequence(List(loadImage("stone-age.gif"), loadImage("java.png"), loadImage("scala.png"))).onSuccess{ case List(stone, java, scala)  =>
-      writeText("Back in the days...", "70px Comic Sans MS", 90, 100, 600)
+      writeTitle("Back in the days...", Some(sdBlue))
       drawImage2(scala, 50, 170, 0.8)
       drawImage2(java, 430, 170, 0.5)
       drawImage2(stone, 780, 50, 1)
       drawArrow()
     }
   }
+  def norway()(implicit ctx: CanvasCtx) = {
+    Future.sequence(List(loadImage("norway.jpg"))).onSuccess{
+      case List(norway)  =>
+        writeTitle("Hurra for 17. mai!", Some(sdBlue))
+        drawImage2(norway, 200, 200, 2)(ctx)
+    }
+  }
 
   def brain()(implicit ctx: CanvasCtx) = {
     Future.sequence(List(loadImage("brain.jpg"))).onSuccess{
       case List(brain)  =>
-        writeText("Context switching", "70px Comic Sans MS", 90, 100, 600)(ctx.ctx)
-        drawImage2(brain, 700, 60, 1)(ctx.ctx)
+        writeTitle("Context switching", Some(sdBlue))
+        drawImage2(brain, 700, 60, 1)(ctx)
     }
   }
-  def today()(implicit ctx: Ctx) = {
+  def today()(implicit ctx: CanvasCtx) = {
     Future.sequence(List(loadImage("today.png"), loadImage("java.png"), loadImage("scala.png"), loadImage("js-logo.jpg"), loadImage("llvm.png"))).onSuccess{
       case List(today, java, scala, js, llvm)  =>
-        writeText("Today...", "70px Comic Sans MS", 90, 100, 600)
+        writeTitle("Today...", Some(sdBlue))
         drawImage2(scala, 50, 390, 0.8)
         drawImage2(java, 430, 170, 0.5)
         drawImage2(js, 430, 400, 0.6)
         //drawImage2(today, 50, 50, 0.6)
         drawImage2(llvm, 450, 650, 0.9)
-        withTranslation(350, 450+50){implicit ctx: Ctx =>
+        withTranslation(350, 450+50){ implicit ctx =>
           drawArrow2()
         }
-        withTranslation(350, 600+50){implicit ctx: Ctx =>
+        withTranslation(350, 600+50){ implicit c =>
+          val ctx = c.ctx
           ctx.rotate(30*Math.PI/180)
           drawArrow2()
           ctx.rotate(-30*Math.PI/180)
         }
-        withTranslation(350, 300+50){implicit ctx: Ctx =>
+        withTranslation(350, 300+50){ implicit c =>
+          val ctx = c.ctx
           ctx.rotate(-30*Math.PI/180)
           drawArrow2()
           ctx.rotate(+30*Math.PI/180)
@@ -176,7 +192,7 @@ object Images {
     }
   }
 
-  def drawSea(canvasWidth: Double, canvasHeight: Double, height: Double)(implicit ctx: Ctx) =
+  def drawSea(canvasWidth: Double, canvasHeight: Double, height: Double)(implicit ctx: CanvasCtx) =
     withPath(Color("blue")){ ctx =>
       ctx.moveTo(0, height)
       ctx.lineTo(canvasWidth, height)
@@ -184,7 +200,7 @@ object Images {
       ctx.lineTo(0, canvasHeight)
     }
 
-  def drawBlueSky(canvasWidth: Double, canvasHeight: Double, height: Double)(implicit ctx: Ctx) =
+  def drawBlueSky(canvasWidth: Double, canvasHeight: Double, height: Double)(implicit ctx: CanvasCtx) =
     withPath(Color("#87CEFA")){ ctx =>
       ctx.moveTo(0,0)
       ctx.lineTo(0, height)
@@ -193,20 +209,20 @@ object Images {
       ctx.lineTo(0, 0)
     }
 
-  def drawBouble()(implicit ctx: Ctx) =
+  def drawBouble()(implicit c: CanvasCtx) =
     withPath(Color(Some("white"), Some(2 -> "black"))){ ctx =>
       ctx.moveTo(150, 290)
       ctx.lineTo(175, 263)
       ctx.bezierCurveTo(12, 159, 420, 166, 204, 265)
+      ctx.closePath()
     }
 
-  def drawSun()(implicit ctx: Ctx) =
+  def drawSun()(implicit ctx: CanvasCtx) =
     withPath(Color("yellow")){ctx =>
       ctx.arc(130, 130, 100, 0, 2*Math.PI)
     }
 
-
-  def drawArrow()(implicit ctx: Ctx) = {
+  def drawArrow()(implicit ctx: CanvasCtx) = {
     withPath(Color("pink")){ ctx=>
       val start = (250, 250)
       ctx.moveTo(start._1, start._2 - 15)
@@ -219,8 +235,8 @@ object Images {
    }
   }
 
-  def drawArrow2()(implicit ctx: Ctx) = {
-    withPath(Color("pink")){ ctx=>
+  def drawArrow2()(implicit ctx: CanvasCtx) = {
+    withPath(Color("pink")){ ctx =>
       val start = (-70, 0)
       ctx.moveTo(start._1, start._2 - 15)
       ctx.lineTo(start._1 + 100, start._2 - 15)
@@ -232,6 +248,31 @@ object Images {
    }
   }
 
+
+  def drawArrow3(s: Point, s2: Point, color: Color)(implicit ct: CanvasCtx) = {
+    val ctx = ct.ctx
+    def p(a: Double, b: Double, c: Double, d: Double) = {
+      val xDiff = s.x - s2.x
+      val yDiff = s.y - s2.y
+      val grad = Math.PI / 5
+      Point(s2.x + (a * xDiff * Math.cos(grad)) + (b * yDiff * Math.sin(grad)), s2.y + (c * yDiff * Math.cos(grad)) + (d * xDiff * Math.sin(grad)))
+    }
+    ctx.save()
+    ctx.beginPath()
+    ctx.lineWidth = 10
+    ctx.lineCap = "round"
+    ctx.strokeStyle = color.fill.get
+    ctx.moveTo(s.x, s.y)
+    ctx.lineTo(s2.x, s2.y)
+    val p1 = p(0.1, 0.1, 0.1, -0.1)
+    val p2 = p(0.1, -0.1, 0.1, 0.1)
+    ctx.moveTo(p1.x, p1.y)
+    ctx.lineTo(s2.x, s2.y)
+    ctx.lineTo(p2.x, p2.y)
+    ctx.stroke()
+    ctx.restore()
+  }
+
   def drawImage(): Seq[CanvasCtx => Unit] = Seq(
     implicit canCtx => {
       implicit val CanvasCtx(_, ctx, canvasWidth, canvasHeight) = canCtx
@@ -240,49 +281,45 @@ object Images {
       drawBlueSky(canvasWidth, canvasHeight, seaHight)
     },
     implicit canCtx => {
-      implicit val CanvasCtx(_, ctx, canvasWidth, canvasHeight) = canCtx
-      withTranslation(-70, 0){implicit ctx => drawIsland() }
-      withTranslation(540, 0){implicit ctx => drawIsland() }
+      withTranslation(-70, 0){ implicit canCtx => drawIsland() }
+      withTranslation(540, 0){ implicit canCtx => drawIsland() }
     },
     implicit canCtx => {
-      implicit val CanvasCtx(_, ctx, canvasWidth, canvasHeight) = canCtx
-      withTranslation(130, 480){implicit ctx =>
-        withScale(0.2, 0.2){implicit ctx =>
+      withTranslation(130, 480){ implicit canCtx =>
+        withScale(0.2, 0.2){ implicit canCtx =>
           drawMan()
         }
       }
-      withTranslation(750, 480){implicit ctx =>
-        withScale(0.2, 0.2){implicit ctx =>
+      withTranslation(750, 480){implicit canCtx =>
+        withScale(0.2, 0.2){ implicit canCtx =>
           drawMan()
         }
       }
     },
     implicit canCtx => {
-      implicit val CanvasCtx(_, ctx, canvasWidth, canvasHeight) = canCtx
       drawSun()
-      withTranslation(-70, 0){implicit ctx => drawPalm() }
-      withTranslation(540, 0){implicit ctx => drawPalm() }
+      withTranslation(-70, 0){ implicit canCtx => drawPalm() }
+      withTranslation(540, 0){ implicit canCtx => drawPalm() }
     },
     implicit canCtx => {
-      implicit val CanvasCtx(_, ctx, canvasWidth, canvasHeight) = canCtx
 
-      withTranslation(50, 200){implicit ctx =>
+      withTranslation(50, 200){ implicit canCtx =>
         drawBouble()
       }
 
-      withTranslation(860, 200){implicit ctx =>
-        withScale(-1, 1){implicit ctx =>
+      withTranslation(860, 200){ implicit canCtx =>
+        withScale(-1, 1){ implicit canCtx =>
           drawBouble()
         }
       }
 
       withScale(2, 2){ ctx =>
-        ctx.strokeText("Bonjour", 105, 209, 300)
+        ctx.ctx.strokeText("Bonjour", 105, 209, 300)
       }
 
-    withTranslation(610, 420){implicit ctx =>
-      withScale(1.6, 1.6){implicit ctx =>
-        ctx.strokeText("Hei på deg!", 0, 0, 300)
+    withTranslation(610, 420){ implicit canCtx =>
+      withScale(1.6, 1.6) { ctx =>
+        ctx.ctx.strokeText("Hei på deg!", 0, 0, 300)
       }
     }
   })
